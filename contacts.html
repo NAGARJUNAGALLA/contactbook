@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Contact Book</title>
+    <style>
+        /* CSS Reset, Base Styles, and Native App Feel */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            /* Disable text selection across the app */
+            -webkit-user-select: none; 
+            -ms-user-select: none; 
+            user-select: none; 
+        }
+        
+        body {
+            background-color: #f4f7f6;
+            padding-top: 80px; 
+            padding-bottom: 20px;
+        }
+
+        /* Fixed Top Header */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(44, 62, 80, 0.95);
+            backdrop-filter: blur(10px);
+            color: #ffffff;
+            text-align: center;
+            padding: 18px 0;
+            font-size: 22px;
+            font-weight: bold;
+            z-index: 1000;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            letter-spacing: 1px;
+        }
+
+        /* Container */
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Back Button */
+        .back-btn {
+            display: none; /* Hidden on initial load */
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            background: #e2e8f0;
+            color: #2c3e50;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: background 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .back-btn:hover {
+            background: #cbd5e1;
+            transform: translateX(-2px);
+        }
+
+        /* Dynamic Buttons - One Per Row */
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 30px;
+            width: 100%;
+        }
+        
+        .category-btn {
+            width: 100%;
+            padding: 16px 20px;
+            font-size: 18px;
+            border: none;
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            color: white;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            font-weight: 600;
+            box-shadow: 0 4px 10px rgba(110, 142, 251, 0.3);
+            letter-spacing: 1px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .category-btn::after {
+            content: '➔';
+            font-size: 16px;
+            opacity: 0.8;
+        }
+
+        .category-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(110, 142, 251, 0.4);
+        }
+
+        /* Contact List & Accordion Styling */
+        .contact-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .contact-card {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .contact-header {
+            font-size: 17px;
+            font-weight: bold;
+            color: #2c3e50;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .toggle-icon {
+            font-size: 12px;
+            color: #888;
+            transition: transform 0.3s ease;
+            background: #f0f4f8;
+            padding: 6px;
+            border-radius: 50%;
+        }
+        
+        .contact-details {
+            display: none;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px dashed #eee;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .contact-details.show {
+            display: flex; 
+        }
+
+        .phone-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #4a5568;
+            font-size: 15px;
+            background-color: #f8fafc;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid #a777e3;
+        }
+        
+        .call-btn {
+            text-decoration: none;
+            background-color: #27ae60;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.3s, transform 0.2s;
+            box-shadow: 0 2px 5px rgba(39, 174, 96, 0.3);
+        }
+        
+        .call-btn:hover {
+            background-color: #219150;
+            transform: scale(1.05);
+        }
+
+        .loading {
+            text-align: center;
+            font-weight: 500;
+            color: #6e8efb;
+            display: none;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>My Contacts</header>
+
+    <div class="container">
+        
+        <button id="backBtn" class="back-btn">⬅ Back to Categories</button>
+
+        <div id="categoryButtons" class="button-group"></div>
+
+        <div id="loading" class="loading">Loading contacts...</div>
+        
+        <div class="contact-list" id="contactList"></div>
+    </div>
+
+    <script>
+        // --- IMPORTANT: REPLACE WITH YOUR GOOGLE SHEET ID ---
+        const SHEET_ID = '1HT8YD9migQ9IfPhkD9vqFnxqYPkelevXhA6v1mC2fDM'; 
+        // ----------------------------------------------------
+
+        const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+        let allContacts = [];
+
+        // UI Elements
+        const categoryButtonsContainer = document.getElementById('categoryButtons');
+        const backBtn = document.getElementById('backBtn');
+        const contactListContainer = document.getElementById('contactList');
+
+        // Fetch Data
+        async function fetchSheetData() {
+            document.getElementById('loading').style.display = 'block';
+            try {
+                const response = await fetch(SHEET_URL);
+                const text = await response.text();
+                
+                const jsonString = text.substring(47).slice(0, -2);
+                const jsonData = JSON.parse(jsonString);
+
+                allContacts = jsonData.table.rows.map(row => {
+                    return {
+                        category: row.c[0] ? String(row.c[0].v).trim() : 'Uncategorized',
+                        name: row.c[1] ? String(row.c[1].v).trim() : 'Unknown',
+                        mobile1: row.c[2] ? String(row.c[2].v).trim() : '',
+                        mobile2: row.c[3] ? String(row.c[3].v).trim() : ''
+                    };
+                }).filter(contact => contact.name !== 'Unknown' && contact.name !== ''); // Filter out empty rows
+
+                renderCategoryButtons();
+
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                contactListContainer.innerHTML = '<p style="color:#e74c3c; text-align:center; background:#fdf0ed; padding:15px; border-radius:8px;">Failed to load data. Ensure Sheet ID is correct and Sheet is public.</p>';
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        // Render Category Buttons
+        function renderCategoryButtons() {
+            categoryButtonsContainer.innerHTML = '';
+
+            const uniqueCategories = [...new Set(allContacts.map(c => c.category))]
+                .filter(Boolean)
+                .sort();
+
+            if (uniqueCategories.length === 0) {
+                categoryButtonsContainer.innerHTML = '<p style="text-align:center;">No contacts found in sheet.</p>';
+                return;
+            }
+
+            uniqueCategories.forEach(category => {
+                const btn = document.createElement('button');
+                btn.className = 'category-btn';
+                btn.textContent = category;
+                
+                btn.addEventListener('click', () => {
+                    // Switch UI Views
+                    categoryButtonsContainer.style.display = 'none';
+                    backBtn.style.display = 'inline-flex';
+                    
+                    renderContacts(category);
+                });
+                
+                categoryButtonsContainer.appendChild(btn);
+            });
+        }
+
+        // Render Contacts
+        function renderContacts(categoryFilter) {
+            contactListContainer.innerHTML = '';
+
+            const filtered = allContacts.filter(c => c.category === categoryFilter);
+
+            filtered.forEach(contact => {
+                const card = document.createElement('div');
+                card.className = 'contact-card';
+
+                // Construct HTML for numbers only if they exist
+                let phoneHTML = '';
+                if (contact.mobile1) {
+                    phoneHTML += `
+                        <div class="phone-row">
+                            <span>📱 ${contact.mobile1}</span>
+                            <a href="tel:${contact.mobile1}" class="call-btn" onclick="event.stopPropagation();">📞 Call</a>
+                        </div>
+                    `;
+                }
+                if (contact.mobile2) {
+                    phoneHTML += `
+                        <div class="phone-row">
+                            <span>☎️ ${contact.mobile2}</span>
+                            <a href="tel:${contact.mobile2}" class="call-btn" onclick="event.stopPropagation();">📞 Call</a>
+                        </div>
+                    `;
+                }
+                if (!contact.mobile1 && !contact.mobile2) {
+                    phoneHTML = `<div style="text-align:center; color:#888; font-size:14px; padding:10px;">No numbers available</div>`;
+                }
+
+                card.innerHTML = `
+                    <div class="contact-header" onclick="toggleDetails(this)">
+                        <span>${contact.name}</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="contact-details">
+                        ${phoneHTML}
+                    </div>
+                `;
+                contactListContainer.appendChild(card);
+            });
+        }
+
+        // Toggle Accordion Logic
+        function toggleDetails(element) {
+            const details = element.nextElementSibling;
+            const icon = element.querySelector('.toggle-icon');
+            
+            if (details.classList.contains('show')) {
+                details.classList.remove('show');
+                icon.style.transform = 'rotate(0deg)';
+                icon.style.background = '#f0f4f8';
+            } else {
+                details.classList.add('show');
+                icon.style.transform = 'rotate(180deg)';
+                icon.style.background = '#e2e8f0';
+            }
+        }
+
+        // Back Button Logic
+        backBtn.addEventListener('click', () => {
+            // Restore UI Views
+            backBtn.style.display = 'none';
+            contactListContainer.innerHTML = ''; // Clear contact list
+            categoryButtonsContainer.style.display = 'flex'; // Show category buttons again
+        });
+
+        // Initialize App
+        fetchSheetData();
+    </script>
+</body>
+</html>
