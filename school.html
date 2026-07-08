@@ -194,13 +194,13 @@
                 // They are NOT printed as text anywhere on the card.
                 card.innerHTML = `
                     <div class="student-name">${student.studentName}</div>
-                    
+                    <br>
                     <div class="parent-info">
                         <div class="parent-group">
                             <span>${student.fatherName}</span>
                             ${student.fatherMobile ? `<a href="tel:${student.fatherMobile}" class="call-btn" title="Call Father">☎️</a>` : ''}
                         </div>
-                        
+                        <br>
                         <span style="color: #ccc;">|</span>
                         
                         <div class="parent-group">
