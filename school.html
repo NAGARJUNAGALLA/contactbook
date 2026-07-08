@@ -5,17 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>School Directory</title>
     <style>
-        /* CSS Reset and Base Styles */
+        /* CSS Reset, Base Styles, and Native App Feel */
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            /* Disable text selection across the app */
+            -webkit-user-select: none; 
+            -ms-user-select: none; 
+            user-select: none; 
         }
+        
         body {
             background-color: #f4f7f6;
-            /* Padding top ensures content doesn't hide under the fixed header */
-            padding-top: 70px; 
+            padding-top: 80px; 
             padding-bottom: 20px;
         }
 
@@ -25,136 +29,209 @@
             top: 0;
             left: 0;
             width: 100%;
-            background-color: #2c3e50;
+            background: rgba(44, 62, 80, 0.95);
+            backdrop-filter: blur(10px);
             color: #ffffff;
             text-align: center;
-            padding: 15px 0;
-            font-size: 24px;
+            padding: 18px 0;
+            font-size: 22px;
             font-weight: bold;
             z-index: 1000;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            letter-spacing: 1px;
         }
 
-        /* Container & Dropdown */
+        /* Container */
         .container {
-            max-width: 800px;
+            max-width: 600px;
             margin: 0 auto;
             padding: 20px;
         }
-        .controls {
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        select {
-            padding: 10px;
+
+        /* Back Button */
+        .back-btn {
+            display: none; /* Hidden on initial load */
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            background: #e2e8f0;
+            color: #2c3e50;
+            border: none;
+            border-radius: 8px;
             font-size: 16px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            width: 200px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: background 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
 
-        /* Student List Styling */
-        .student-list {
+        .back-btn:hover {
+            background: #cbd5e1;
+            transform: translateX(-2px);
+        }
+
+        /* Dynamic Buttons - One Per Row */
+        .button-group {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 15px;
+            margin-bottom: 30px;
+            width: 100%;
         }
-        .student-card {
-            background: #fff;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .student-name {
+        
+        .class-btn {
+            width: 100%;
+            padding: 16px 20px;
             font-size: 18px;
-            font-weight: bold;
-            color: #333;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 8px;
-        }
-        .parent-info {
+            border: none;
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            color: white;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            font-weight: 600;
+            box-shadow: 0 4px 10px rgba(110, 142, 251, 0.3);
+            letter-spacing: 1px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            color: #555;
-            font-size: 15px;
         }
-        .parent-group {
+
+        .class-btn::after {
+            content: '➔';
+            font-size: 16px;
+            opacity: 0.8;
+        }
+
+        .class-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(110, 142, 251, 0.4);
+        }
+
+        /* Student List & Accordion Styling */
+        .student-list {
             display: flex;
-            align-items: center;
-            gap: 10px;
+            flex-direction: column;
+            gap: 12px;
         }
-        /* Call Button Styling */
+        
+        .student-card {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .student-header {
+            font-size: 17px;
+            font-weight: bold;
+            color: #2c3e50;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .toggle-icon {
+            font-size: 12px;
+            color: #888;
+            transition: transform 0.3s ease;
+            background: #f0f4f8;
+            padding: 6px;
+            border-radius: 50%;
+        }
+        
+        .student-details {
+            display: none;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px dashed #eee;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .student-details.show {
+            display: flex; 
+        }
+
+        .parent-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #4a5568;
+            font-size: 15px;
+            background-color: #f8fafc;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid #a777e3;
+        }
+        
         .call-btn {
             text-decoration: none;
-            background-color: white;
+            background-color: #27ae60;
             color: white;
-            padding: 8px 12px;
-            border-radius: 50%;
+            padding: 8px 16px;
+            border-radius: 20px;
             display: inline-flex;
             align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            transition: background 0.3s;
+            gap: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.3s, transform 0.2s;
+            box-shadow: 0 2px 5px rgba(39, 174, 96, 0.3);
         }
+        
         .call-btn:hover {
             background-color: #219150;
+            transform: scale(1.05);
         }
+
         .loading {
             text-align: center;
-            font-style: italic;
-            color: #777;
+            font-weight: 500;
+            color: #6e8efb;
             display: none;
+            padding: 20px;
         }
     </style>
 </head>
 <body>
 
-    <header>MPL PRIMARY SCHOOL , RUSTUMBADA GIRLS</header>
+    <header>Springfield Elementary School</header>
 
     <div class="container">
-        <div class="controls">
-            <select id="classSelect">
-                <option value="">Select a Class...</option>
-                <option value="1">Class 1</option>
-                <option value="2">Class 2</option>
-                <option value="3">Class 3</option>
-                <option value="4">Class 4</option>
-                <option value="5">Class 5</option>
-            </select>
-        </div>
+        
+        <button id="backBtn" class="back-btn">⬅ Back to Classes</button>
+
+        <div id="classButtons" class="button-group"></div>
 
         <div id="loading" class="loading">Loading data...</div>
         
         <div class="student-list" id="studentList"></div>
     </div>
-    <h2> Welcome to Contact Book</h2>
 
     <script>
-        // --- IMPORTANT: REPLACE WITH YOUR GOOGLE SHEET ID ---
         const SHEET_ID = '1CxXivZf0NYs5-ElpfsZ-r1gNkzp41wKsAdgERjZI3vY'; 
-        // ----------------------------------------------------
-
-        // Google Visualization API endpoint
         const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
-
         let allStudents = [];
 
-        // Fetch data when the page loads
+        // UI Elements
+        const classButtonsContainer = document.getElementById('classButtons');
+        const backBtn = document.getElementById('backBtn');
+        const studentListContainer = document.getElementById('studentList');
+
+        // Fetch Data
         async function fetchSheetData() {
             document.getElementById('loading').style.display = 'block';
             try {
                 const response = await fetch(SHEET_URL);
                 const text = await response.text();
                 
-                // Google returns a text wrapper around the JSON. We need to strip it.
                 const jsonString = text.substring(47).slice(0, -2);
                 const jsonData = JSON.parse(jsonString);
 
-                // Map the raw Google Sheet rows into a clean array of objects
                 allStudents = jsonData.table.rows.map(row => {
                     return {
                         classNum: row.c[0] ? String(row.c[0].v).trim() : '',
@@ -165,61 +242,104 @@
                         motherMobile: row.c[5] ? row.c[5].v : ''
                     };
                 });
+
+                renderClassButtons();
+
             } catch (error) {
                 console.error('Error fetching data:', error);
-                document.getElementById('studentList').innerHTML = '<p style="color:red; text-align:center;">Failed to load data. Ensure Sheet ID is correct and Sheet is public.</p>';
+                studentListContainer.innerHTML = '<p style="color:#e74c3c; text-align:center; background:#fdf0ed; padding:15px; border-radius:8px;">Failed to load data. Ensure Sheet ID is correct and Sheet is public.</p>';
             } finally {
                 document.getElementById('loading').style.display = 'none';
             }
         }
 
-        // Render filtered students to the screen
-        function renderStudents(classFilter) {
-            const container = document.getElementById('studentList');
-            container.innerHTML = '';
+        // Render Class Buttons
+        function renderClassButtons() {
+            classButtonsContainer.innerHTML = '';
 
-            if (!classFilter) return; // Do nothing if no class selected
+            const uniqueClasses = [...new Set(allStudents.map(s => s.classNum))]
+                .filter(Boolean)
+                .sort((a, b) => a.localeCompare(b, undefined, {numeric: true}));
 
-            const filtered = allStudents.filter(s => s.classNum === classFilter);
-
-            if (filtered.length === 0) {
-                container.innerHTML = '<p style="text-align:center;">No students found in this class.</p>';
+            if (uniqueClasses.length === 0) {
+                classButtonsContainer.innerHTML = '<p style="text-align:center;">No classes found in sheet.</p>';
                 return;
             }
+
+            uniqueClasses.forEach(cls => {
+                const btn = document.createElement('button');
+                btn.className = 'class-btn';
+                btn.textContent = `Class ${cls}`;
+                
+                btn.addEventListener('click', () => {
+                    // Switch UI Views
+                    classButtonsContainer.style.display = 'none';
+                    backBtn.style.display = 'inline-flex';
+                    
+                    renderStudents(cls);
+                });
+                
+                classButtonsContainer.appendChild(btn);
+            });
+        }
+
+        // Render Students
+        function renderStudents(classFilter) {
+            studentListContainer.innerHTML = '';
+
+            const filtered = allStudents.filter(s => s.classNum === classFilter);
 
             filtered.forEach(student => {
                 const card = document.createElement('div');
                 card.className = 'student-card';
 
-                // We construct the HTML securely. The actual mobile numbers are placed inside the href="tel:..." 
-                // They are NOT printed as text anywhere on the card.
                 card.innerHTML = `
-                    <div class="student-name">${student.studentName}</div>
-                    <br>
-                    <div class="parent-info">
-                        <div class="parent-group">
-                            <span>${student.fatherName}</span>
-                            ${student.fatherMobile ? `<a href="tel:${student.fatherMobile}" class="call-btn" title="Call Father">☎️</a>` : ''}
+                    <div class="student-header" onclick="toggleDetails(this)">
+                        <span>${student.studentName}</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    
+                    <div class="student-details">
+                        <div class="parent-row">
+                            <span>👨 ${student.fatherName}</span>
+                            ${student.fatherMobile ? `<a href="tel:${student.fatherMobile}" class="call-btn" onclick="event.stopPropagation();">📞 Call</a>` : ''}
                         </div>
-                        <br>
-                        <span style="color: #ccc;">|</span>
                         
-                        <div class="parent-group">
-                            <span>${student.motherName}</span>
-                            ${student.motherMobile ? `<a href="tel:${student.motherMobile}" class="call-btn" title="Call Alternate">☎️</a>` : ''}
+                        <div class="parent-row">
+                            <span>👩 ${student.motherName}</span>
+                            ${student.motherMobile ? `<a href="tel:${student.motherMobile}" class="call-btn" onclick="event.stopPropagation();">📞 Call</a>` : ''}
                         </div>
                     </div>
                 `;
-                container.appendChild(card);
+                studentListContainer.appendChild(card);
             });
         }
 
-        // Event Listener for the Dropdown
-        document.getElementById('classSelect').addEventListener('change', (e) => {
-            renderStudents(e.target.value);
+        // Toggle Accordion Logic
+        function toggleDetails(element) {
+            const details = element.nextElementSibling;
+            const icon = element.querySelector('.toggle-icon');
+            
+            if (details.classList.contains('show')) {
+                details.classList.remove('show');
+                icon.style.transform = 'rotate(0deg)';
+                icon.style.background = '#f0f4f8';
+            } else {
+                details.classList.add('show');
+                icon.style.transform = 'rotate(180deg)';
+                icon.style.background = '#e2e8f0';
+            }
+        }
+
+        // Back Button Logic
+        backBtn.addEventListener('click', () => {
+            // Restore UI Views
+            backBtn.style.display = 'none';
+            studentListContainer.innerHTML = ''; // Clear student list
+            classButtonsContainer.style.display = 'flex'; // Show class buttons again
         });
 
-        // Initialize Fetch
+        // Initialize App
         fetchSheetData();
     </script>
 </body>
