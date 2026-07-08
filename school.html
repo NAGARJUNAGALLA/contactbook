@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Directory</title>
+    <style>
+        /* CSS Reset and Base Styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        body {
+            background-color: #f4f7f6;
+            /* Padding top ensures content doesn't hide under the fixed header */
+            padding-top: 70px; 
+            padding-bottom: 20px;
+        }
+
+        /* Fixed Top Header */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: #2c3e50;
+            color: #ffffff;
+            text-align: center;
+            padding: 15px 0;
+            font-size: 24px;
+            font-weight: bold;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* Container & Dropdown */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .controls {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        select {
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            width: 200px;
+        }
+
+        /* Student List Styling */
+        .student-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .student-card {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .student-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+        }
+        .parent-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #555;
+            font-size: 15px;
+        }
+        .parent-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        /* Call Button Styling */
+        .call-btn {
+            text-decoration: none;
+            background-color: white;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+        .call-btn:hover {
+            background-color: #219150;
+        }
+        .loading {
+            text-align: center;
+            font-style: italic;
+            color: #777;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header>MPL PRIMARY SCHOOL , RUSTUMBADA GIRLS</header>
+
+    <div class="container">
+        <div class="controls">
+            <select id="classSelect">
+                <option value="">Select a Class...</option>
+                <option value="1">Class 1</option>
+                <option value="2">Class 2</option>
+                <option value="3">Class 3</option>
+                <option value="4">Class 4</option>
+                <option value="5">Class 5</option>
+            </select>
+        </div>
+
+        <div id="loading" class="loading">Loading data...</div>
+        
+        <div class="student-list" id="studentList"></div>
+    </div>
+
+    <script>
+        // --- IMPORTANT: REPLACE WITH YOUR GOOGLE SHEET ID ---
+        const SHEET_ID = '1CxXivZf0NYs5-ElpfsZ-r1gNkzp41wKsAdgERjZI3vY'; 
+        // ----------------------------------------------------
+
+        // Google Visualization API endpoint
+        const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+
+        let allStudents = [];
+
+        // Fetch data when the page loads
+        async function fetchSheetData() {
+            document.getElementById('loading').style.display = 'block';
+            try {
+                const response = await fetch(SHEET_URL);
+                const text = await response.text();
+                
+                // Google returns a text wrapper around the JSON. We need to strip it.
+                const jsonString = text.substring(47).slice(0, -2);
+                const jsonData = JSON.parse(jsonString);
+
+                // Map the raw Google Sheet rows into a clean array of objects
+                allStudents = jsonData.table.rows.map(row => {
+                    return {
+                        classNum: row.c[0] ? String(row.c[0].v).trim() : '',
+                        studentName: row.c[1] ? row.c[1].v : 'Unknown',
+                        fatherName: row.c[2] ? row.c[2].v : 'N/A',
+                        fatherMobile: row.c[3] ? row.c[3].v : '',
+                        motherName: row.c[4] ? row.c[4].v : 'N/A',
+                        motherMobile: row.c[5] ? row.c[5].v : ''
+                    };
+                });
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                document.getElementById('studentList').innerHTML = '<p style="color:red; text-align:center;">Failed to load data. Ensure Sheet ID is correct and Sheet is public.</p>';
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        // Render filtered students to the screen
+        function renderStudents(classFilter) {
+            const container = document.getElementById('studentList');
+            container.innerHTML = '';
+
+            if (!classFilter) return; // Do nothing if no class selected
+
+            const filtered = allStudents.filter(s => s.classNum === classFilter);
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<p style="text-align:center;">No students found in this class.</p>';
+                return;
+            }
+
+            filtered.forEach(student => {
+                const card = document.createElement('div');
+                card.className = 'student-card';
+
+                // We construct the HTML securely. The actual mobile numbers are placed inside the href="tel:..." 
+                // They are NOT printed as text anywhere on the card.
+                card.innerHTML = `
+                    <div class="student-name">${student.studentName}</div>
+                    
+                    <div class="parent-info">
+                        <div class="parent-group">
+                            <span>${student.fatherName}</span>
+                            ${student.fatherMobile ? `<a href="tel:${student.fatherMobile}" class="call-btn" title="Call Father">☎️</a>` : ''}
+                        </div>
+                        
+                        <span style="color: #ccc;">|</span>
+                        
+                        <div class="parent-group">
+                            <span>${student.motherName}</span>
+                            ${student.motherMobile ? `<a href="tel:${student.motherMobile}" class="call-btn" title="Call Alternate">☎️</a>` : ''}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Event Listener for the Dropdown
+        document.getElementById('classSelect').addEventListener('change', (e) => {
+            renderStudents(e.target.value);
+        });
+
+        // Initialize Fetch
+        fetchSheetData();
+    </script>
+</body>
+</html>
